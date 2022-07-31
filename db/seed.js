@@ -1,10 +1,22 @@
-const { client, getAllUsers, createUser, updateUser, getUserById, createPost, getAllPosts, updatePost } = require("./index");
+const {
+  client,
+  getAllUsers,
+  createUser,
+  updateUser,
+  getUserById,
+  createPost,
+  getAllPosts,
+  updatePost,
+  getPostsByUser,
+} = require("./index");
 
 async function dropTables() {
   try {
     console.log("Starting to drop tables...");
 
     await client.query(`
+      DROP TABLE IF EXISTS post_tags;
+      DROP TABLE IF EXISTS tags;
       DROP TABLE IF EXISTS posts;
       DROP TABLE IF EXISTS users;
       
@@ -41,6 +53,21 @@ async function createTables() {
           active BOOLEAN DEFAULT true
         );
     `);
+
+    await client.query(`
+        CREATE TABLE tags (
+          id, SERIAL PRIMARY KEY
+          name, VARCHAR(255) UNIQUE NOT NULL
+        );      
+    `);
+
+    await client.query(`
+        CREATE TABLE post_tags (
+          "postId", INTEGER REFERENCES posts(id)
+          "tagId", INTEGER REFERENCES tags(id)
+          Add a UNIQUE constraint on ("postId", "tagId")
+        );
+    `)
 
     console.log("Finished building tables!");
   } catch (error) {
@@ -79,7 +106,6 @@ async function createInitialUsers() {
   }
 }
 
-
 async function createInitialPosts() {
   try {
     const [albert, sandra, glamgal] = await getAllUsers();
@@ -87,26 +113,27 @@ async function createInitialPosts() {
     await createPost({
       authorId: albert.id,
       title: "First Post",
-      content: "This is my first post. I hope I love writing blogs as much as I love writing them."
+      content:
+        "This is my first post. I hope I love writing blogs as much as I love writing them.",
     });
 
     await createPost({
       authorId: sandra.id,
       title: "First Post",
-      content: "This is my first post. I hope I love writing blogs as much as I love writing them."
+      content:
+        "This is my first post. I hope I love writing blogs as much as I love writing them.",
     });
 
     await createPost({
       authorId: glamgal.id,
       title: "First Post",
-      content: "This is my first post. I hope you love writing blogs as much as I love writing them."
+      content:
+        "This is my first post. I hope you love writing blogs as much as I love writing them.",
     });
-
   } catch (error) {
     throw error;
   }
 }
-
 
 async function rebuildDB() {
   try {
@@ -132,7 +159,7 @@ async function testDB() {
     console.log("Calling updateUser on users[0]");
     const updateUserResult = await updateUser(users[0].id, {
       name: "Newname Sogood",
-      location: "Lesterville, KY"
+      location: "Lesterville, KY",
     });
     console.log("Result:", updateUserResult);
 
@@ -143,7 +170,7 @@ async function testDB() {
     console.log("Calling updatePost on posts[0]");
     const updatePostResult = await updatePost(posts[0].id, {
       title: "New Title",
-      content: "Updated Content"
+      content: "Updated Content",
     });
     console.log("Result:", updatePostResult);
 
@@ -152,7 +179,6 @@ async function testDB() {
     console.log("Result:", albert);
 
     console.log("Finished database tests!");
- 
   } catch (error) {
     console.error("Error testing database!");
     throw error;

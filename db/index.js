@@ -38,6 +38,26 @@ async function createPost({
   }
 }
 
+
+async function createTags({
+  title,
+  content,
+  tags
+}) {
+  try {
+    const { rows: [ tags ] } = await client.query(`
+    INSERT INTO tags(name)
+    VALUES ($1), ($2), ($3)
+    ON CONFLICT (name) DO NOTHING;
+    `);
+    return tags; 
+  } catch (error) {
+    throw error;
+  }
+}
+
+
+
 async function getAllUsers() {
   const { rows } = await client.query(`SELECT id, username, name, location, active FROM users;`);
 
