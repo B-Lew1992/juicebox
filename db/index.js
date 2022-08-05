@@ -47,17 +47,16 @@ async function createTags(tagList) {
     return;
   }
 
-  // need something like: $1), ($2), ($3
+  
   const insertValues = tagList.map((_, index) => `$${index + 1}`).join("), (");
-  // then we can use: (${ insertValues }) in our string template
-
-  // need something like $1, $2, $3
+  
+  
   const selectValues = tagList.map((_, index) => `$${index + 1}`).join(", ");
-  // then we can use (${ selectValues }) in our string template
+  
 
   try {
-    // insert the tags, doing nothing on conflict
-    // returning nothing, we'll query after
+   
+   
     await client.query(
       `
        INSERT INTO tags(name)
@@ -66,8 +65,7 @@ async function createTags(tagList) {
       `,
       tagList
     );
-    // select all tags where the name is in our taglist
-    // return the rows from the query
+    
     const { rows } = await client.query(
       `
     SELECT * FROM tags
@@ -193,6 +191,18 @@ async function updatePost(postId, fields = {}) {
     await addTagsToPost(postId, tagList);
 
     return await getPostById(postId);
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function getAllTags() {
+  try {
+    const { rows: tags } = await client.query(`
+    SELECT * FROM tags;
+    `);
+
+    return tags;
   } catch (error) {
     throw error;
   }
@@ -329,5 +339,6 @@ module.exports = {
   getUserById,
   createTags,
   addTagsToPost,
-  getPostsByTagName
+  getPostsByTagName,
+  getAllTags
 };
