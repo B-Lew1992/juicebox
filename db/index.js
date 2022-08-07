@@ -23,6 +23,7 @@ async function createUser({ username, password, name, location }) {
 
 async function createPost({ authorId, title, content, tags = [] }) {
   try {
+    console.log(authorId);
     const {
       rows: [post],
     } = await client.query(
@@ -47,16 +48,11 @@ async function createTags(tagList) {
     return;
   }
 
-  
   const insertValues = tagList.map((_, index) => `$${index + 1}`).join("), (");
-  
-  
+
   const selectValues = tagList.map((_, index) => `$${index + 1}`).join(", ");
-  
 
   try {
-   
-   
     await client.query(
       `
        INSERT INTO tags(name)
@@ -65,7 +61,7 @@ async function createTags(tagList) {
       `,
       tagList
     );
-    
+
     const { rows } = await client.query(
       `
     SELECT * FROM tags
@@ -256,6 +252,13 @@ async function getPostById(postId) {
       [postId]
     );
 
+    if (!post) {
+      throw {
+        name: "PostNotFoundError",
+        message: "Could not find a post with that postId"
+      };
+    }
+
     const { rows: tags } = await client.query(
       `
       SELECT tags.*
@@ -311,11 +314,16 @@ async function getUserById(userId) {
 
 async function getUserByUsername(username) {
   try {
-    const { rows: [user] } = await client.query(`
+    const {
+      rows: [user],
+    } = await client.query(
+      `
       SELECT *
       FROM users
       WHERE username=$1;
-    `, [username]);
+    `,
+      [username]
+    );
 
     return user;
   } catch (error) {
@@ -325,21 +333,22 @@ async function getUserByUsername(username) {
 
 async function getPostsByTagName(tagName) {
   try {
-    const { rows: postIds } = await client.query(`
+    const { rows: postIds } = await client.query(
+      `
       SELECT posts.id
       FROM posts
       JOIN post_tags ON posts.id=post_tags."postId"
       JOIN tags ON tags.id=post_tags."tagId"
       WHERE tags.name=$1;
-    `, [tagName]);
+    `,
+      [tagName]
+    );
 
-    return await Promise.all(postIds.map(
-      post => getPostById(post.id)
-    ));
+    return await Promise.all(postIds.map((post) => getPostById(post.id)));
   } catch (error) {
     throw error;
   }
-} 
+}
 
 module.exports = {
   client,
@@ -355,5 +364,6 @@ module.exports = {
   addTagsToPost,
   getPostsByTagName,
   getAllTags,
-  getUserByUsername
+  getUserByUsername,
+  getPostById,
 };
